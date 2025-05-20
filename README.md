@@ -10,3 +10,11 @@ This tool traverses through all subdirectories to find and process all MP3 files
 
 - Python 3.6+
 - mutagen library
+
+## Getting Started
+
+`pip install -r requirements.txt`
+
+`source .venv/bin/activate`
+
+`python script.py`
