@@ -13,8 +13,8 @@ This tool traverses through all subdirectories to find and process all MP3 files
 
 ## Getting Started
 
-`pip install -r requirements.txt`
-
 `source .venv/bin/activate`
+
+`pip install -r requirements.txt`
 
 `python script.py`
