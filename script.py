@@ -37,6 +37,10 @@ def remove_metadata_from_mp3(directory_path):
         print(f"Error: {directory_path} is not a valid directory.")
         return
 
+    metadata_removed = 0
+    no_metadata_found = 0
+    failed_count = 0
+
     # Recursively traverse the directory structure
     for root, _, files in os.walk(directory_path):
         for file in files:
@@ -50,21 +54,43 @@ def remove_metadata_from_mp3(directory_path):
                     if audio.tags:
                         audio.delete()  # Remove all metadata
                         audio.save()    # Save the file without metadata
+                        metadata_removed += 1
                         print(f"Metadata removed from: {file_path}")
                     else:
+                        no_metadata_found += 1
                         print(f"No metadata found in: {file_path}")
                 except error as e:
+                    failed_count += 1
                     print(f"Failed to process {file_path}: {e}")
-                except Exception as e:
-                    print(f"Unexpected error processing {file_path}: {e}")
+                except OSError as e:
+                    failed_count += 1
+                    print(f"File system error processing {file_path}: {e}")
+                except KeyboardInterrupt:
+                    print("Process interrupted by user.")
+                    raise
+
+    return {
+        "metadata_removed": metadata_removed,
+        "no_metadata_found": no_metadata_found,
+        "failed_count": failed_count
+    }
 
 if __name__ == "__main__":
     # Get the target directory from the user
     directory = input("Enter the path to the directory containing MP3 files: ").strip()
 
-    print(f"Starting to process MP3 files in: {directory}")
-    print("This will recursively search all subdirectories.")
+    print()
+    print("Starting to process MP3 files 🎵")
+    print()
 
-    remove_metadata_from_mp3(directory)
+    result = remove_metadata_from_mp3(directory)
+    print()
 
-    print("Processing complete.")
+    print("Processing complete. 🥳")
+    print()
+    print("-" * 40)
+    print(f"✅ Successfully removed meta from {result['metadata_removed']} files.")
+    print(f"⚠️ Metadata not found in {result['no_metadata_found']} files.")
+    print(f"🛑 Failed to process {result['failed_count']} files.")
+    print("-" * 40)
+    print()
