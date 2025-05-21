@@ -18,6 +18,79 @@ from mutagen.mp3 import MP3
 from mutagen.mp4 import MP4
 from mutagen.id3 import ID3, error
 
+
+def create_audio_file(file_path: str) -> MP3 | MP4 | None:
+    """
+    Creates an audio file object based on the file extension.
+
+    Args:
+        file_path (str): Path to the audio file.
+
+    Returns:
+        MP3 | MP4: An instance of MP3 or MP4 class based on the file type.
+    """
+    if file_path.lower().endswith('.mp3'):
+        return MP3(file_path, ID3=ID3)
+    elif file_path.lower().endswith('.m4a'):
+        return MP4(file_path)
+    else:
+        return None
+
+
+def remove_metadata(audio_file: MP3 | MP4):
+    """
+    Remove all metadata from an audio file and save the changes.
+
+    This function removes all metadata tags from the given audio file object
+    and saves the changes back to the file on disk.
+
+    Args:
+        audio_file (MP3 | MP4): The audio file object from which to remove metadata.
+                              Must be either an MP3 or MP4 object with delete() and save() methods.
+
+    Returns:
+        None
+    """
+    audio_file.delete()  # Remove all metadata
+    audio_file.save()    # Save the file without metadata
+
+
+def print_result(result):
+    """
+    Print the summary of metadata removal process results.
+
+    Args:
+        result (dict): A dictionary containing the counts of processed files.
+            Expected keys:
+            - 'metadata_removed': Number of files successfully processed
+            - 'no_metadata_found': Number of files without metadata
+            - 'failed_count': Number of files that failed to process
+
+    Returns:
+        None: This function prints results to console only.
+    """
+    print()
+    print("Processing complete. 🥳")
+    print()
+    print("-" * 40)
+    print(f"✅ Successfully removed metadata from {result['metadata_removed']} files.")
+    print(f"⚠️ Metadata not found in {result['no_metadata_found']} files.")
+    print(f"🛑 Failed to process {result['failed_count']} files.")
+    print("-" * 40)
+    print()
+
+def print_newline():
+    """
+    Print a newline character to standard output.
+
+    This function calls the print() function without arguments,
+    which results in only a newline character being printed.
+
+    Returns:
+        None
+    """
+    print()
+
 def remove_metadata_from_audio(directory_path):
     """
     Recursively removes metadata from all MP3 and M4A files in the specified directory and its subdirectories.
@@ -50,44 +123,26 @@ def remove_metadata_from_audio(directory_path):
     # Recursively traverse the directory structure
     for root, _, files in os.walk(directory_path):
         for file in files:
-            file_lower = file.lower()
-            if file_lower.endswith('.mp3') or file_lower.endswith('.m4a'):
-                file_path = os.path.join(root, file)
-                try:
-                    if file_lower.endswith('.mp3'):
-                        # Handle MP3 files
-                        audio = MP3(file_path, ID3=ID3)
-                        if audio.tags:
-                            audio.delete()  # Remove all metadata
-                            audio.save()    # Save the file without metadata
-                            metadata_removed += 1
-                            print(f"Metadata removed from MP3: {file_path}")
-                        else:
-                            no_metadata_found += 1
-                            print(f"No metadata found in MP3: {file_path}")
-                    elif file_lower.endswith('.m4a'):
-                        # Handle M4A files
-                        audio = MP4(file_path)
-                        if audio.tags:
-                            audio.delete()  # Remove all metadata
-                            audio.save()    # Save the file without metadata
-                            metadata_removed += 1
-                            print(f"Metadata removed from M4A: {file_path}")
-                        else:
-                            no_metadata_found += 1
-                            print(f"No metadata found in M4A: {file_path}")
-                except error as e:
-                    failed_count += 1
-                    print(f"Failed to process {file_path}: {e}")
-                except OSError as e:
-                    failed_count += 1
-                    print(f"File system error processing {file_path}: {e}")
-                except KeyboardInterrupt:
-                    print("Process interrupted by user.")
-                    raise
-                except Exception as e:
-                    failed_count += 1
-                    print(f"Unexpected error processing {file_path}: {str(e)}")
+            file_path = os.path.join(root, file)
+            try:
+                audio_file = create_audio_file(file_path)
+
+                if audio_file is not None and audio_file.tags:
+                    remove_metadata(audio_file)
+                    metadata_removed += 1
+                    print(f"Metadata removed from: {file_path}")
+            except error as e:
+                failed_count += 1
+                print(f"Failed to process {file_path}: {e}")
+            except OSError as e:
+                failed_count += 1
+                print(f"File system error processing {file_path}: {e}")
+            except KeyboardInterrupt:
+                print("Process interrupted by user.")
+                raise
+            except Exception as e:
+                failed_count += 1
+                print(f"Unexpected error processing {file_path}: {str(e)}")
 
     return {
         "metadata_removed": metadata_removed,
@@ -99,18 +154,11 @@ if __name__ == "__main__":
     # Get the target directory from the user
     directory = input("Enter the path to the directory containing audio files (MP3/M4A): ").strip()
 
-    print()
+    print_newline()
     print("Starting to process audio files 🎵")
-    print()
+    print_newline()
 
     result = remove_metadata_from_audio(directory)
-    print()
+    print_newline()
 
-    print("Processing complete. 🥳")
-    print()
-    print("-" * 40)
-    print(f"✅ Successfully removed metadata from {result['metadata_removed']} files.")
-    print(f"⚠️ Metadata not found in {result['no_metadata_found']} files.")
-    print(f"🛑 Failed to process {result['failed_count']} files.")
-    print("-" * 40)
-    print()
+    print_result(result)
